@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telegraf
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: telegraf
+  template:
+    metadata:
+      labels:
+        app: telegraf
+    spec:
+      nodeSelector:
+          kubernetes.io/hostname: andreas
+          node-role.kubernetes.io/control-plane: "true"
+          node-role.kubernetes.io/master: "true"
+      containers:
+        - name: telegraf
+          image: telegraf
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "250m"
+          volumeMounts:
+            - name: telegraf-config-volume
+              mountPath: /etc/telegraf/telegraf.conf
+              subPath: telegraf.conf
+      volumes:
+        - name: telegraf-config-volume
+          configMap:
+            name: telegraf-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: telegraf-service
+spec:
+  selector:
+    app: telegraf
+  ports:
+    - name: "8081"
+      port: 8081
+      targetPort: 8081

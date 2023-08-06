@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: influxdb-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: influxdb
+  template:
+    metadata:
+      labels:
+        app: influxdb
+    spec:
+      nodeSelector:
+          kubernetes.io/hostname: andreas
+          node-role.kubernetes.io/control-plane: "true"
+          node-role.kubernetes.io/master: "true"
+      containers:
+        - name: influxdb
+          image: influxdb:latest
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "250m"
+          ports:
+            - containerPort: 8086
+          envFrom:
+            - configMapRef:
+                name: influxdb-config
+          command: ["/bin/bash"]
+          args: ["-c", "/entrypoint.sh"]
+          volumeMounts:   
+            - mountPath: /var/lib/influxdb2
+              name: influxdb-storage
+      volumes:
+        - name: influxdb-storage
+          persistentVolumeClaim:
+            claimName: influxdb-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: influxdb-service
+spec:
+  selector:
+    app: influxdb
+  ports:
+    - protocol: TCP
+      port: 8086
+      targetPort: 8086
+
+  

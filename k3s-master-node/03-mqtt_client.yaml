@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mqtt
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mqtt
+  template:
+    metadata:
+      labels:
+        app: mqtt
+    spec:
+      nodeSelector:
+          kubernetes.io/hostname: raspberrypi
+      initContainers:
+        - name: init-myservice
+          image: busybox
+          command: ['sh', '-c', 'sleep 3']
+      containers:
+        - name: mqtt
+          image: p4lik4ri/mqtt:v2
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "250m"
+          securityContext:
+            privileged: true
+          command: ["python3", "api_to_mqtt.py"]
+          workingDir: /script
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mqtt-service
+spec:
+  selector:
+    app: mqtt
+  ports:
+    - protocol: TCP
+      port: 1884
+      targetPort: 1884
