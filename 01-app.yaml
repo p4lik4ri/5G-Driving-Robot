@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-control-robot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-control-robot
+  template:
+    metadata:
+      labels:
+        app: api-control-robot
+    spec:
+      nodeSelector:
+          kubernetes.io/hostname: raspberrypi
+      containers:
+        - name: api-control-robot
+          image: p4lik4ri/app:v1
+          securityContext:
+            privileged: true
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "250m"
+          workingDir: /code
+          command: ["/bin/sh", "-c"]
+          args:
+            - "uvicorn app.api:app --host 0.0.0.0 --port 8000"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-control-robot-service
+spec:
+  selector:
+    app: api-control-robot
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
